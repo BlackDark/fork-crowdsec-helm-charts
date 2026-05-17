@@ -127,6 +127,15 @@
                         "retryOnAlreadyExistIntervalSeconds": {
                             "type": "integer",
                             "minimum": 1
+                        },
+                        "preStopUnregister": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
                         }
                     },
                     "additionalProperties": false

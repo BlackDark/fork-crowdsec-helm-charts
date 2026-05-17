@@ -204,6 +204,20 @@ spec:
 
         securityContext:
           {{- toYaml .Values.agent.securityContext | nindent 10 }}
+        {{- if or (eq (include "agent.lapiPreStopUnregisterEnabled" .) "true") (not (empty .Values.agent.lifecycle)) }}
+        lifecycle:
+          {{- with .Values.agent.lifecycle }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- if eq (include "agent.lapiPreStopUnregisterEnabled" .) "true" }}
+          preStop:
+            exec:
+              command:
+                - sh
+                - -c
+                - cscli -c /etc/crowdsec/config.yaml lapi unregister || true
+          {{- end }}
+        {{- end }}
 
         volumeMounts:
           {{- if or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth) }}

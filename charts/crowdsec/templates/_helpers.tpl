@@ -175,6 +175,12 @@ false
 {{- if and (eq (include "agent.tokenAuthRegistration" .) "true") .Values.agent.lapiRegistration.enabled }}true{{- end -}}
 {{- end -}}
 
+{{- define "agent.lapiPreStopUnregisterEnabled" -}}
+{{- if eq (include "agent.lapiRegistrationEnabled" .) "true" -}}
+{{- if not (eq .Values.agent.lapiRegistration.preStopUnregister.enabled false) -}}true{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "agent.pvcBootstrapEnabled" -}}
 {{- if and (eq (include "agent.tokenAuthRegistration" .) "true") .Values.agent.persistentVolume.config.enabled }}true{{- end -}}
 {{- end -}}

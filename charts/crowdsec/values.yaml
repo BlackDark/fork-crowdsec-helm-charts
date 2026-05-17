@@ -559,6 +559,12 @@ agent:
     retryOnAlreadyExist: true
     retryOnAlreadyExistMaxAttempts: 90
     retryOnAlreadyExistIntervalSeconds: 10
+    # -- preStop hook: cscli lapi unregister on graceful termination (use with unregister_on_exit in agent config)
+    preStopUnregister:
+      enabled: true
+  # -- Lifecycle hooks for agent pods (merged with preStopUnregister when enabled)
+  ## @param agent.lifecycle [object] Lifecycle hooks for agent pods (postStart, preStop, etc.)
+  lifecycle: {}
   # -- Enable persistent volumes
   persistentVolume:
     # -- Persistent volume for config folder. Stores local config (parsers, scenarios etc.)
