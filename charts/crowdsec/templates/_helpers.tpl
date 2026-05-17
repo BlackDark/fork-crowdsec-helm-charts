@@ -163,3 +163,33 @@ false
 {{ dig "storeLAPICscliCredentialsInSecret" (not .Values.lapi.persistentVolume.config.enabled) .Values.lapi }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+  Agent LAPI registration uses scripts instead of inline shell when enabled.
+*/}}
+{{- define "agent.lapiRegistrationScripts" -}}
+{{- and .Values.agent.enabled (or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth)) .Values.agent.lapiRegistration.enabled -}}
+{{- end -}}
+
+{{- define "agent.pvcMountPath" -}}
+{{- .Values.agent.lapiRegistration.pvcMountPath | default "/etc/crowdsec_data" -}}
+{{- end -}}
+
+{{- define "agent.lapiRegistrationEnv" -}}
+- name: CS_LAPI_REGISTRATION_PVC_ENABLED
+  value: {{ .Values.agent.persistentVolume.config.enabled | quote }}
+- name: CS_LAPI_REGISTRATION_PVC_PATH
+  value: {{ include "agent.pvcMountPath" . | quote }}
+- name: CS_LAPI_REGISTRATION_REUSE
+  value: {{ .Values.agent.lapiRegistration.reusePersistedCredentials | quote }}
+- name: CS_LAPI_REGISTRATION_VALIDATE
+  value: {{ .Values.agent.lapiRegistration.validateCredentials | quote }}
+- name: CS_LAPI_REGISTRATION_RETRY
+  value: {{ .Values.agent.lapiRegistration.retryOnAlreadyExist | quote }}
+- name: CS_LAPI_REGISTRATION_RETRY_MAX
+  value: {{ .Values.agent.lapiRegistration.retryOnAlreadyExistMaxAttempts | quote }}
+- name: CS_LAPI_REGISTRATION_RETRY_INTERVAL
+  value: {{ .Values.agent.lapiRegistration.retryOnAlreadyExistIntervalSeconds | quote }}
+- name: CS_LAPI_REGISTRATION_PERSIST
+  value: {{ .Values.agent.lapiRegistration.persistCredentialsToPvc | quote }}
+{{- end -}}

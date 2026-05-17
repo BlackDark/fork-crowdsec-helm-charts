@@ -1,0 +1,15 @@
+{{- if include "agent.lapiRegistrationScripts" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-agent-scripts
+  labels:
+    k8s-app: {{ .Release.Name }}
+    type: agent-scripts
+    version: v1
+data:
+  agent-lapi-register.sh: |-
+{{ (.Files.Get "files/agent-lapi-register.sh") | indent 4 }}
+  agent-bootstrap-pvc.sh: |-
+{{ (.Files.Get "files/agent-bootstrap-pvc.sh") | indent 4 }}
+{{- end }}
