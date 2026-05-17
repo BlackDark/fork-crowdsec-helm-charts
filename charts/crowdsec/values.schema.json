@@ -140,6 +140,15 @@
                     },
                     "additionalProperties": false
                 },
+                "startup": {
+                    "type": "object",
+                    "properties": {
+                        "hubUpgrade": {
+                            "type": "boolean"
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "additionalAcquisition": {
                     "type": "array",
                     "items": {

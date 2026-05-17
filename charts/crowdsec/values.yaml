@@ -562,6 +562,9 @@ agent:
     # -- preStop hook: cscli lapi unregister on graceful termination (use with unregister_on_exit in agent config)
     preStopUnregister:
       enabled: true
+  # -- Run cscli hub upgrade before crowdsec (scenario data files in /var/lib/crowdsec/data)
+  startup:
+    hubUpgrade: true
   # -- Lifecycle hooks for agent pods (merged with preStopUnregister when enabled)
   ## @param agent.lifecycle [object] Lifecycle hooks for agent pods (postStart, preStop, etc.)
   lifecycle: {}

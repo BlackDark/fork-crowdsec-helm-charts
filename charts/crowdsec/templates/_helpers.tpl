@@ -185,12 +185,29 @@ false
 {{- if and (eq (include "agent.tokenAuthRegistration" .) "true") .Values.agent.persistentVolume.config.enabled }}true{{- end -}}
 {{- end -}}
 
+{{- define "agent.hubUpgradeOnStart" -}}
+{{- if and .Values.agent.enabled (not (eq .Values.agent.startup.hubUpgrade false)) }}true{{- end -}}
+{{- end -}}
+
 {{- define "agent.agentScripts" -}}
-{{- if or (eq (include "agent.lapiRegistrationEnabled" .) "true") (eq (include "agent.pvcBootstrapEnabled" .) "true") }}true{{- end -}}
+{{- if or (eq (include "agent.lapiRegistrationEnabled" .) "true") (eq (include "agent.pvcBootstrapEnabled" .) "true") (eq (include "agent.hubUpgradeOnStart" .) "true") }}true{{- end -}}
+{{- end -}}
+
+{{- define "agent.useAgentStartScript" -}}
+{{- if and .Values.agent.enabled (eq (include "agent.agentScripts" .) "true") }}true{{- end -}}
 {{- end -}}
 
 {{- define "agent.pvcMountPath" -}}
 {{- .Values.agent.lapiRegistration.pvcMountPath | default "/etc/crowdsec_data" -}}
+{{- end -}}
+
+{{- define "agent.startupEnv" -}}
+{{- if eq (include "agent.useAgentStartScript" .) "true" }}
+- name: CS_AGENT_PVC_BOOTSTRAP
+  value: {{ eq (include "agent.pvcBootstrapEnabled" .) "true" | quote }}
+- name: CS_AGENT_HUB_UPGRADE
+  value: {{ eq (include "agent.hubUpgradeOnStart" .) "true" | quote }}
+{{- end }}
 {{- end -}}
 
 {{- define "agent.lapiRegistrationEnv" -}}

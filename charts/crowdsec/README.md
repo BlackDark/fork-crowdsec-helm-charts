@@ -528,6 +528,7 @@ controller:
 | `agent.lapiRegistration.retryOnAlreadyExistMaxAttempts` | Max registration retries                                                          | `90`    |
 | `agent.lapiRegistration.retryOnAlreadyExistIntervalSeconds` | Seconds between retries                                                     | `10`    |
 | `agent.lapiRegistration.preStopUnregister.enabled` | preStop `cscli lapi unregister` when `lapiRegistration.enabled` (pair with `unregister_on_exit`) | `true` |
+| `agent.startup.hubUpgrade`                       | Run `cscli hub upgrade` before start (scenario data files; uses `agent-start.sh`) | `true` |
 | `agent.lifecycle`                                | Extra lifecycle hooks for agent pods (merged with preStop unregister)       | `{}`    |
 | `agent.persistentVolume.config.enabled`          | [object] Enable persistent volume for agent config                                         | `false` |
 | `agent.persistentVolume.config.accessModes`      | Access modes for the config PVC                                                            | `[]`    |

@@ -119,18 +119,16 @@ spec:
       - name: crowdsec-agent
         image: "{{ .Values.image.repository | default "crowdsecurity/crowdsec" }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-    {{- if or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth) }}
-      {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
-        command: ['sh', '/scripts/agent-bootstrap-pvc.sh']
-      {{- else if .Values.agent.persistentVolume.config.enabled }}
+    {{- if eq (include "agent.useAgentStartScript" .) "true" }}
+        command: ['sh', '/scripts/agent-start.sh']
+    {{- else if or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth) }}
+      {{- if .Values.agent.persistentVolume.config.enabled }}
         command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && ./docker_start.sh']
       {{- else }}
         command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && ./docker_start.sh']
       {{- end }}
     {{- else }}
-      {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
-        command: ['sh', '/scripts/agent-bootstrap-pvc.sh']
-      {{- else if .Values.agent.persistentVolume.config.enabled }}
+      {{- if .Values.agent.persistentVolume.config.enabled }}
         command: ['sh', '-c', 'mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && ./docker_start.sh']
       {{- end }}
     {{- end }}
@@ -141,8 +139,8 @@ spec:
             value: "true"
           - name: CROWDSEC_BYPASS_DB_VOLUME_CHECK
             value: "true"
-          {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
-          {{- include "agent.lapiRegistrationEnv" . | nindent 10 }}
+          {{- if eq (include "agent.useAgentStartScript" .) "true" }}
+          {{- include "agent.startupEnv" . | nindent 10 }}
           {{- end }}
 
           # agent - lapi authentication, with TLS or password
@@ -221,7 +219,7 @@ spec:
           - name: crowdsec-config
             mountPath: /tmp_config
           {{- end }}
-          {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
+          {{- if eq (include "agent.useAgentStartScript" .) "true" }}
           - name: agent-scripts
             mountPath: /scripts
           {{- end }}

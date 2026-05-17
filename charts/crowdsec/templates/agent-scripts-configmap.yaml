@@ -10,6 +10,6 @@ metadata:
 data:
   agent-lapi-register.sh: |-
 {{ (.Files.Get "files/agent-lapi-register.sh") | indent 4 }}
-  agent-bootstrap-pvc.sh: |-
-{{ (.Files.Get "files/agent-bootstrap-pvc.sh") | indent 4 }}
+  agent-start.sh: |-
+{{ (.Files.Get "files/agent-start.sh") | indent 4 }}
 {{- end }}
