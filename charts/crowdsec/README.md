@@ -520,6 +520,13 @@ controller:
 | `agent.podSecurityContext`                       | Security context for agent pods                                                            | `{}`    |
 | `agent.securityContext`                          | Security context for agent containers                                                      | `{}`    |
 | `agent.resources`                                | Resource requests and limits for agent pods                                                | `{}`    |
+| `agent.lapiRegistration.enabled`                 | Idempotent LAPI registration: reuse PVC credentials, validate via `cscli lapi status`, retry on duplicate machine | `false` |
+| `agent.lapiRegistration.pvcMountPath`            | Mount path for agent config PVC (init + main); must match `extraVolumeMounts` under this path, not `/etc/crowdsec` | `/etc/crowdsec_data` |
+| `agent.lapiRegistration.reusePersistedCredentials` | Reuse `local_api_credentials.yaml` from PVC when login matches pod name                 | `true`  |
+| `agent.lapiRegistration.validateCredentials`     | Run `cscli lapi status` before reusing PVC credentials                                     | `true`  |
+| `agent.lapiRegistration.retryOnAlreadyExist`     | Retry registration when machine already exists (e.g. waiting for LAPI autodelete)          | `true`  |
+| `agent.lapiRegistration.retryOnAlreadyExistMaxAttempts` | Max registration retries                                                          | `90`    |
+| `agent.lapiRegistration.retryOnAlreadyExistIntervalSeconds` | Seconds between retries                                                     | `10`    |
 | `agent.persistentVolume.config.enabled`          | [object] Enable persistent volume for agent config                                         | `false` |
 | `agent.persistentVolume.config.accessModes`      | Access modes for the config PVC                                                            | `[]`    |
 | `agent.persistentVolume.config.storageClassName` | StorageClass name for the config PVC                                                       | `""`    |

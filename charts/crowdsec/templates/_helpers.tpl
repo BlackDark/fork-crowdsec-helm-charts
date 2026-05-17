@@ -165,10 +165,22 @@ false
 {{- end -}}
 
 {{/*
-  Agent LAPI registration uses scripts instead of inline shell when enabled.
+  Helm `include` of bare `and` yields string "false" which is truthy in `if`. Emit "true" or empty only.
 */}}
-{{- define "agent.lapiRegistrationScripts" -}}
-{{- and .Values.agent.enabled (or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth)) .Values.agent.lapiRegistration.enabled -}}
+{{- define "agent.tokenAuthRegistration" -}}
+{{- if and .Values.agent.enabled (or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth)) }}true{{- end -}}
+{{- end -}}
+
+{{- define "agent.lapiRegistrationEnabled" -}}
+{{- if and (eq (include "agent.tokenAuthRegistration" .) "true") .Values.agent.lapiRegistration.enabled }}true{{- end -}}
+{{- end -}}
+
+{{- define "agent.pvcBootstrapEnabled" -}}
+{{- if and (eq (include "agent.tokenAuthRegistration" .) "true") .Values.agent.persistentVolume.config.enabled }}true{{- end -}}
+{{- end -}}
+
+{{- define "agent.agentScripts" -}}
+{{- if or (eq (include "agent.lapiRegistrationEnabled" .) "true") (eq (include "agent.pvcBootstrapEnabled" .) "true") }}true{{- end -}}
 {{- end -}}
 
 {{- define "agent.pvcMountPath" -}}
@@ -190,6 +202,8 @@ false
   value: {{ .Values.agent.lapiRegistration.retryOnAlreadyExistMaxAttempts | quote }}
 - name: CS_LAPI_REGISTRATION_RETRY_INTERVAL
   value: {{ .Values.agent.lapiRegistration.retryOnAlreadyExistIntervalSeconds | quote }}
-- name: CS_LAPI_REGISTRATION_PERSIST
-  value: {{ .Values.agent.lapiRegistration.persistCredentialsToPvc | quote }}
+{{- if .Values.tls.insecureSkipVerify }}
+- name: INSECURE_SKIP_VERIFY
+  value: {{ quote .Values.tls.insecureSkipVerify }}
+{{- end }}
 {{- end -}}

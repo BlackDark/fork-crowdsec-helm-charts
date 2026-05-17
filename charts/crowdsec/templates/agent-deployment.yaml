@@ -23,7 +23,7 @@ spec:
       annotations:
         checksum/agent-configmap: {{ include (print $.Template.BasePath "/agent-configmap.yaml") . | sha256sum }}
         checksum/acquis-configmap: {{ include (print $.Template.BasePath "/acquis-configmap.yaml") . | sha256sum }}
-        {{- if include "agent.lapiRegistrationScripts" . }}
+        {{- if eq (include "agent.agentScripts" .) "true" }}
         checksum/agent-scripts: {{ include (print $.Template.BasePath "/agent-scripts-configmap.yaml") . | sha256sum }}
         {{- end }}
         {{- if .Values.podAnnotations }}
@@ -58,7 +58,7 @@ spec:
       - name: wait-for-lapi-and-register
         image: "{{ .Values.image.repository | default "crowdsecurity/crowdsec" }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        {{- if include "agent.lapiRegistrationScripts" . }}
+        {{- if eq (include "agent.lapiRegistrationEnabled" .) "true" }}
         command: ['sh', '/scripts/agent-lapi-register.sh']
         {{- else }}
         command: ['sh', '-c', 'until nc "$LAPI_HOST" "$LAPI_PORT" -z; do echo waiting for lapi to start; sleep 5; done; ln -s /staging/etc/crowdsec /etc/crowdsec && cscli lapi register --machine "$USERNAME" -u "$LAPI_URL" --token "$REGISTRATION_TOKEN" && cp /etc/crowdsec/local_api_credentials.yaml /tmp_config/local_api_credentials.yaml']
@@ -81,7 +81,7 @@ spec:
         volumeMounts:
           - name: crowdsec-config
             mountPath: /tmp_config
-          {{- if include "agent.lapiRegistrationScripts" . }}
+          {{- if eq (include "agent.lapiRegistrationEnabled" .) "true" }}
           - name: agent-scripts
             mountPath: /scripts
           {{- if .Values.agent.persistentVolume.config.enabled }}
@@ -108,7 +108,7 @@ spec:
             value: "{{ .Values.agent.lapiHost | default (printf "%s-service.%s" .Release.Name .Release.Namespace) }}"
           - name: LAPI_PORT
             value: "{{ .Values.agent.lapiPort | default "8080" }}"
-          {{- if include "agent.lapiRegistrationScripts" . }}
+          {{- if eq (include "agent.lapiRegistrationEnabled" .) "true" }}
           {{- include "agent.lapiRegistrationEnv" . | nindent 10 }}
           {{- end }}
         {{- end }}
@@ -120,7 +120,7 @@ spec:
         image: "{{ .Values.image.repository | default "crowdsecurity/crowdsec" }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
     {{- if or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth) }}
-      {{- if and (include "agent.lapiRegistrationScripts" .) .Values.agent.persistentVolume.config.enabled }}
+      {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
         command: ['sh', '/scripts/agent-bootstrap-pvc.sh']
       {{- else if .Values.agent.persistentVolume.config.enabled }}
         command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && ./docker_start.sh']
@@ -128,7 +128,7 @@ spec:
         command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && ./docker_start.sh']
       {{- end }}
     {{- else }}
-      {{- if and (include "agent.lapiRegistrationScripts" .) .Values.agent.persistentVolume.config.enabled }}
+      {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
         command: ['sh', '/scripts/agent-bootstrap-pvc.sh']
       {{- else if .Values.agent.persistentVolume.config.enabled }}
         command: ['sh', '-c', 'mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && ./docker_start.sh']
@@ -141,7 +141,7 @@ spec:
             value: "true"
           - name: CROWDSEC_BYPASS_DB_VOLUME_CHECK
             value: "true"
-          {{- if and (include "agent.lapiRegistrationScripts" .) .Values.agent.persistentVolume.config.enabled }}
+          {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
           {{- include "agent.lapiRegistrationEnv" . | nindent 10 }}
           {{- end }}
 
@@ -210,7 +210,7 @@ spec:
           - name: crowdsec-config
             mountPath: /tmp_config
           {{- end }}
-          {{- if and (include "agent.lapiRegistrationScripts" .) .Values.agent.persistentVolume.config.enabled }}
+          {{- if eq (include "agent.pvcBootstrapEnabled" .) "true" }}
           - name: agent-scripts
             mountPath: /scripts
           {{- end }}
@@ -289,7 +289,7 @@ spec:
       - name: crowdsec-config
         emptyDir: {}
       {{- end }}
-      {{- if include "agent.lapiRegistrationScripts" . }}
+      {{- if eq (include "agent.agentScripts" .) "true" }}
       - name: agent-scripts
         configMap:
           name: {{ .Release.Name }}-agent-scripts

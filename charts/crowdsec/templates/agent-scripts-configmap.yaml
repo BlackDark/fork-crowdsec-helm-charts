@@ -1,4 +1,4 @@
-{{- if include "agent.lapiRegistrationScripts" . }}
+{{- if eq (include "agent.agentScripts" .) "true" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

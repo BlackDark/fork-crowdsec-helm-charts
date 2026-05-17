@@ -14,7 +14,6 @@ VALIDATE="${CS_LAPI_REGISTRATION_VALIDATE:-true}"
 RETRY="${CS_LAPI_REGISTRATION_RETRY:-true}"
 RETRY_MAX="${CS_LAPI_REGISTRATION_RETRY_MAX:-90}"
 RETRY_INTERVAL="${CS_LAPI_REGISTRATION_RETRY_INTERVAL:-10}"
-PERSIST="${CS_LAPI_REGISTRATION_PERSIST:-true}"
 
 register() {
   cscli lapi register --machine "$USERNAME" -u "$LAPI_URL" --token "$REGISTRATION_TOKEN"
@@ -22,9 +21,22 @@ register() {
 
 persist_credentials() {
   cp /etc/crowdsec/local_api_credentials.yaml /tmp_config/local_api_credentials.yaml
-  if [ "$PVC_ENABLED" = "true" ] && [ "$PERSIST" = "true" ]; then
+  if [ "$PVC_ENABLED" = "true" ]; then
     cp /etc/crowdsec/local_api_credentials.yaml "$PVC_PATH/local_api_credentials.yaml"
   fi
+}
+
+validate_stored_credentials() {
+  valdir=/tmp/lapi-validate
+  rm -rf "$valdir"
+  mkdir -p "$valdir/etc/crowdsec"
+  cp "$PVC_PATH/local_api_credentials.yaml" "$valdir/etc/crowdsec/local_api_credentials.yaml"
+  if [ -f "$PVC_PATH/config.yaml" ]; then
+    cp "$PVC_PATH/config.yaml" "$valdir/etc/crowdsec/config.yaml"
+  else
+    cp /staging/etc/crowdsec/config.yaml "$valdir/etc/crowdsec/config.yaml"
+  fi
+  cscli -c "$valdir/etc/crowdsec/config.yaml" lapi status >/tmp/lapi-check.err 2>&1
 }
 
 if [ "$PVC_ENABLED" = "true" ] && [ "$REUSE" = "true" ] && [ -s "$PVC_PATH/local_api_credentials.yaml" ]; then
@@ -36,10 +48,7 @@ if [ "$PVC_ENABLED" = "true" ] && [ "$REUSE" = "true" ] && [ -s "$PVC_PATH/local
     echo "clearing stale credentials: PVC login $saved_login != pod $USERNAME"
     rm -f "$PVC_PATH/local_api_credentials.yaml"
   elif [ "$VALIDATE" = "true" ]; then
-    lapi_url=$(grep -E '^url:' "$PVC_PATH/local_api_credentials.yaml" | awk '{print $2}' | tail -1)
-    saved_pass=$(grep -E '^password:' "$PVC_PATH/local_api_credentials.yaml" | awk '{print $2}' | tail -1)
-    if ! wget -q -O /dev/null --timeout=10 --user="$saved_login" --password="$saved_pass" \
-      "${lapi_url%/}/v1/decisions?limit=1" 2>/tmp/lapi-check.err; then
+    if ! validate_stored_credentials; then
       echo "LAPI rejected stored credentials for $USERNAME; re-registering"
       cat /tmp/lapi-check.err >&2 || true
       rm -f "$PVC_PATH/local_api_credentials.yaml"

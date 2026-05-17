@@ -101,6 +101,36 @@
                         "$ref": "#/definitions/Acquisition"
                     }
                 },
+                "lapiRegistration": {
+                    "type": "object",
+                    "description": "Idempotent LAPI registration with optional config PVC (token auth only).",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "pvcMountPath": {
+                            "type": "string"
+                        },
+                        "reusePersistedCredentials": {
+                            "type": "boolean"
+                        },
+                        "validateCredentials": {
+                            "type": "boolean"
+                        },
+                        "retryOnAlreadyExist": {
+                            "type": "boolean"
+                        },
+                        "retryOnAlreadyExistMaxAttempts": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "retryOnAlreadyExistIntervalSeconds": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "additionalAcquisition": {
                     "type": "array",
                     "items": {

@@ -552,14 +552,13 @@ agent:
       memory: 250Mi
   # -- Idempotent LAPI registration when using token auth (see files/agent-lapi-register.sh)
   lapiRegistration:
-    enabled: true
+    enabled: false
     pvcMountPath: /etc/crowdsec_data
     reusePersistedCredentials: true
     validateCredentials: true
     retryOnAlreadyExist: true
     retryOnAlreadyExistMaxAttempts: 90
     retryOnAlreadyExistIntervalSeconds: 10
-    persistCredentialsToPvc: true
   # -- Enable persistent volumes
   persistentVolume:
     # -- Persistent volume for config folder. Stores local config (parsers, scenarios etc.)
