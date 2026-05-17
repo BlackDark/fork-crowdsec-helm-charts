@@ -521,6 +521,7 @@ controller:
 | `agent.securityContext`                          | Security context for agent containers                                                      | `{}`    |
 | `agent.resources`                                | Resource requests and limits for agent pods                                                | `{}`    |
 | `agent.lapiRegistration.enabled`                 | Idempotent LAPI registration: reuse PVC credentials, validate via `cscli lapi status`, retry on duplicate machine | `false` |
+| `agent.lapiRegistration.machineName`             | Stable LAPI machine name (empty = pod name). Use with config PVC across rollouts | `""`    |
 | `agent.lapiRegistration.pvcMountPath`            | Mount path for agent config PVC (init + main); must match `extraVolumeMounts` under this path, not `/etc/crowdsec` | `/etc/crowdsec_data` |
 | `agent.lapiRegistration.reusePersistedCredentials` | Reuse `local_api_credentials.yaml` from PVC when login matches pod name                 | `true`  |
 | `agent.lapiRegistration.validateCredentials`     | Run `cscli lapi status` before reusing PVC credentials                                     | `true`  |

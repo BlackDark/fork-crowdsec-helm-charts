@@ -98,10 +98,15 @@ spec:
               secretKeyRef:
                 name: {{ include "lapi.secretName" . }}
                 key: {{ include "lapi.registrationTokenKey" . }}
+          {{- if .Values.agent.lapiRegistration.machineName }}
+          - name: USERNAME
+            value: {{ .Values.agent.lapiRegistration.machineName | quote }}
+          {{- else }}
           - name: USERNAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          {{- end }}
           - name: LAPI_URL
             value: "{{ .Values.agent.lapiURL | default (printf "http://%s-service.%s:8080" .Release.Name .Release.Namespace) }}"
           {{- if eq (include "agent.lapiRegistrationEnabled" .) "true" }}

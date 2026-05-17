@@ -108,6 +108,9 @@
                         "enabled": {
                             "type": "boolean"
                         },
+                        "machineName": {
+                            "type": "string"
+                        },
                         "pvcMountPath": {
                             "type": "string"
                         },

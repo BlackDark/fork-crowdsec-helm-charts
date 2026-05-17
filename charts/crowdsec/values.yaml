@@ -553,6 +553,8 @@ agent:
   # -- Idempotent LAPI registration when using token auth (see files/agent-lapi-register.sh)
   lapiRegistration:
     enabled: false
+    # -- LAPI machine name (empty = pod name). Use a stable name with config PVC across rollouts.
+    machineName: ""
     pvcMountPath: /etc/crowdsec_data
     reusePersistedCredentials: true
     validateCredentials: true
@@ -561,7 +563,7 @@ agent:
     retryOnAlreadyExistIntervalSeconds: 10
     # -- preStop hook: cscli lapi unregister on graceful termination (use with unregister_on_exit in agent config)
     preStopUnregister:
-      enabled: true
+      enabled: false
   # -- Run cscli hub upgrade before crowdsec (scenario data files in /var/lib/crowdsec/data)
   startup:
     hubUpgrade: true

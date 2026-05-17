@@ -43,6 +43,13 @@ if [ "$PVC_ENABLED" = "true" ] && [ "$REUSE" = "true" ] && [ -s "$PVC_PATH/local
   if [ ! -f "$PVC_PATH/config.yaml" ]; then
     cp -a /staging/etc/crowdsec/. "$PVC_PATH/"
   fi
+  if [ ! -f "$PVC_PATH/config.yaml" ]; then
+    echo "PVC missing config.yaml; will register instead of reusing credentials"
+    rm -f "$PVC_PATH/local_api_credentials.yaml"
+  fi
+fi
+
+if [ "$PVC_ENABLED" = "true" ] && [ "$REUSE" = "true" ] && [ -s "$PVC_PATH/local_api_credentials.yaml" ] && [ -f "$PVC_PATH/config.yaml" ]; then
   saved_login=$(grep -E '^login:' "$PVC_PATH/local_api_credentials.yaml" | awk '{print $2}' | tail -1)
   if [ "$saved_login" != "$USERNAME" ]; then
     echo "clearing stale credentials: PVC login $saved_login != pod $USERNAME"
@@ -84,6 +91,9 @@ if [ "$RETRY" = "true" ] && grep -q "already exist" /tmp/register.err; then
   while [ "$i" -lt "$RETRY_MAX" ]; do
     sleep "$RETRY_INTERVAL"
     i=$((i + 1))
+    if [ $((i % 6)) -eq 0 ]; then
+      echo "still waiting to register $USERNAME (attempt $i/$RETRY_MAX)"
+    fi
     if register 2>/tmp/register.err; then
       persist_credentials
       exit 0
