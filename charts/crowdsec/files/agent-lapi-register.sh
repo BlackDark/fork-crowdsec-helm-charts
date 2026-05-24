@@ -26,6 +26,22 @@ persist_credentials() {
   fi
 }
 
+# If this init container is killed (SIGTERM) after successfully registering but
+# before the main container starts, the machine would remain in the LAPI with a
+# NULL last_heartbeat. The agents_autodelete flush does not clean up NULL-heartbeat
+# machines, so the next pod would be blocked by "machine already exist".
+# This trap unregisters the machine on unexpected exit so the next pod can
+# register cleanly. It is disabled (flag cleared) on the normal success path so
+# that a healthy main container start is not affected.
+_registered_not_persisted=false
+_cleanup_on_interrupt() {
+  if [ "$_registered_not_persisted" = "true" ]; then
+    echo "Init container interrupted after registration; unregistering $USERNAME from LAPI"
+    cscli -c /etc/crowdsec/config.yaml lapi unregister 2>/dev/null || true
+  fi
+}
+trap _cleanup_on_interrupt EXIT
+
 validate_stored_credentials() {
   valdir=/tmp/lapi-validate
   rm -rf "$valdir"
@@ -81,7 +97,9 @@ fi
 ln -s /staging/etc/crowdsec /etc/crowdsec
 
 if register 2>/tmp/register.err; then
+  _registered_not_persisted=true
   persist_credentials
+  _registered_not_persisted=false
   exit 0
 fi
 
@@ -95,7 +113,9 @@ if [ "$RETRY" = "true" ] && grep -q "already exist" /tmp/register.err; then
       echo "still waiting to register $USERNAME (attempt $i/$RETRY_MAX)"
     fi
     if register 2>/tmp/register.err; then
+      _registered_not_persisted=true
       persist_credentials
+      _registered_not_persisted=false
       exit 0
     fi
     grep -q "already exist" /tmp/register.err || { cat /tmp/register.err; exit 1; }

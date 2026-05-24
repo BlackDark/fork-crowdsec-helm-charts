@@ -18,15 +18,11 @@ ensure_config_tree() {
 
 if [ "$PVC_BOOTSTRAP" = "true" ]; then
   ensure_config_tree
-  if [ ! -f "$PVC_PATH/config.yaml" ]; then
-    cp -a /staging/etc/crowdsec/. "$PVC_PATH/"
-  else
-    for f in /staging/etc/crowdsec/*; do
-      [ -e "$f" ] || continue
-      base=$(basename "$f")
-      [ -e "$PVC_PATH/$base" ] || cp -a "$f" "$PVC_PATH/$base"
-    done
-  fi
+  for f in /staging/etc/crowdsec/*; do
+    [ -e "$f" ] || continue
+    base=$(basename "$f")
+    [ -e "$PVC_PATH/$base" ] || cp -a "$f" "$PVC_PATH/$base"
+  done
   if [ ! -f "$PVC_PATH/config.yaml" ]; then
     echo "FATAL: $PVC_PATH/config.yaml missing before PVC bootstrap" >&2
     ls -la "$PVC_PATH/" >&2 || true
