@@ -190,6 +190,12 @@ elif [ -n "$USE_WAL" ] && isfalse "$USE_WAL"; then
     conf_set '.db_config.use_wal = false'
 fi
 
+# Disable the agent subsystem when running in LAPI-only mode.
+# Without this, crowdsec starts the acquisition pipeline and warns about missing log files.
+if istrue "$DISABLE_AGENT"; then
+    conf_set '.crowdsec_service.enable = false'
+fi
+
 lapi_credentials_path=$(conf_get '.api.client.credentials_path')
 
 # generate local agent credentials (even if agent is disabled, cscli needs a
