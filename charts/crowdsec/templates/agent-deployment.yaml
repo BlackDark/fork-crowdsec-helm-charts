@@ -153,7 +153,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
     {{- if or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth) }}
       {{- if .Values.agent.persistentVolume.config.enabled }}
-        command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && ./docker_start.sh']
+        command: ['sh', '-c', 'mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && cp /tmp_config/local_api_credentials.yaml /etc/crowdsec/local_api_credentials.yaml && ./docker_start.sh']
       {{- else }}
         command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && ./docker_start.sh']
       {{- end }}
