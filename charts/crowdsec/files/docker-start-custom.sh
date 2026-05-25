@@ -284,7 +284,9 @@ if isfalse "$DISABLE_ONLINE_API" && [ "$ENROLL_KEY" != "" ]; then
         done
     fi
     # shellcheck disable=SC2086
-    cscli console enroll $enroll_args "$ENROLL_KEY"
+    enroll_out=$(cscli console enroll $enroll_args "$ENROLL_KEY" 2>&1) || true
+    # Suppress the benign "already enrolled" advisory — it is not an error
+    echo "$enroll_out" | grep -v "already enrolled" | grep -v "use '--overwrite'" || true
 fi
 
 # crowdsec sqlite database permissions
