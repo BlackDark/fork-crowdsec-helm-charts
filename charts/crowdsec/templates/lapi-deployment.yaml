@@ -28,6 +28,7 @@ spec:
       annotations:
         checksum/lapi-secret: {{ include (print $.Template.BasePath "/lapi-secrets.yaml") . | sha256sum }}
         checksum/lapi-configmap: {{ include (print $.Template.BasePath "/lapi-configmap.yaml") . | sha256sum }}
+        checksum/docker-start-script: {{ include (print $.Template.BasePath "/docker-start-configmap.yaml") . | sha256sum }}
         {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | trim | indent 8 }}
         {{- end }}
