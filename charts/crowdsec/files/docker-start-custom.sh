@@ -209,7 +209,7 @@ if ( isfalse "$USE_TLS" || [ "$CLIENT_CERT_FILE" = "" ] ); then
         cscli machines add "$CUSTOM_HOSTNAME" --auto --force
     else
         echo "Local agent credentials found"
-        if ( cscli machines list -o json | yq -e 'any_c(.machineId==strenv(CUSTOM_HOSTNAME))' >/dev/null ); then
+        if ( cscli machines list -o json | yq -e 'any_c(.machineId==strenv(CUSTOM_HOSTNAME))' >/dev/null 2>&1 ); then
             echo "Local agent already registered"
         else
             echo "Registering local agent to lapi from existing credentials"
@@ -284,7 +284,7 @@ if isfalse "$DISABLE_ONLINE_API" && [ "$ENROLL_KEY" != "" ]; then
         done
     fi
     # shellcheck disable=SC2086
-    cscli console enroll $enroll_args "$ENROLL_KEY"
+    cscli console enroll --overwrite $enroll_args "$ENROLL_KEY"
 fi
 
 # crowdsec sqlite database permissions
