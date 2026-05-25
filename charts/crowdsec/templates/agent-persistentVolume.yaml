@@ -25,7 +25,7 @@ spec:
     requests:
       storage: "{{ .Values.agent.persistentVolume.config.size }}"
 {{ end }}
-{{- if and (.Values.agent.enabled) (.Values.agent.persistentVolume.data.enabled) (not .Values.agent.persistentVolume.data.existingClaim) (eq .Values.agent.type "deployment") }}
+{{- if and (.Values.agent.enabled) (.Values.agent.persistentVolume.data.enabled) (not .Values.agent.persistentVolume.data.existingClaim) (.Values.agent.isDeployment) }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
