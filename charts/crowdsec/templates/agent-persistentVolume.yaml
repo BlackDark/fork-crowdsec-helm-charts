@@ -25,4 +25,27 @@ spec:
     requests:
       storage: "{{ .Values.agent.persistentVolume.config.size }}"
 {{ end }}
-
+{{- if and (.Values.agent.enabled) (.Values.agent.persistentVolume.data.enabled) (not .Values.agent.persistentVolume.data.existingClaim) (eq .Values.agent.type "deployment") }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-agent-data-pvc
+  labels:
+    k8s-app: {{ .Release.Name }}
+    type: agent
+    version: v1
+spec:
+  accessModes:
+{{ toYaml .Values.agent.persistentVolume.data.accessModes | indent 4 }}
+{{- if .Values.agent.persistentVolume.data.storageClassName }}
+{{- if (eq "-" .Values.agent.persistentVolume.data.storageClassName) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.agent.persistentVolume.data.storageClassName }}"
+{{- end }}
+{{- end }}
+  resources:
+    requests:
+      storage: "{{ .Values.agent.persistentVolume.data.size }}"
+{{ end }}

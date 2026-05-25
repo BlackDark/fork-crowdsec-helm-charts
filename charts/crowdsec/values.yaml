@@ -567,6 +567,20 @@ agent:
       subPath: ""
       ## @param agent.persistentVolume.config.size [string] Requested size for the config PVC
       size: 100Mi
+    # -- Persistent volume for data folder. Stores hub pattern files (downloaded by cscli hub upgrade).
+    # When disabled (default), an emptyDir is used so the upstream hub upgrade check still triggers.
+    ## @param agent.persistentVolume.data.enabled [default: false] Enable persistent volume for agent data
+    data:
+      enabled: false
+      ## @param agent.persistentVolume.data.accessModes [array] Access modes for the data PVC
+      accessModes:
+        - ReadWriteOnce
+      ## @param agent.persistentVolume.data.storageClassName [string] StorageClass name for the data PVC
+      storageClassName: ""
+      ## @param agent.persistentVolume.data.existingClaim [string] Existing PVC to use for data (skips PVC creation)
+      existingClaim: ""
+      ## @param agent.persistentVolume.data.size [string] Requested size for the data PVC
+      size: 500Mi
   # -- Enable hostPath to /var/log
   ## @param agent.hostVarLog [default: true] [object] Mount hostPath `/var/log` into the agent pod
   hostVarLog: true

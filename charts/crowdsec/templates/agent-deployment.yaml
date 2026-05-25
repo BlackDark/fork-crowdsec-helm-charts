@@ -329,6 +329,8 @@ spec:
             mountPath: {{ $crowdsecConfig }}/config.yaml.local
             subPath: config.yaml.local
           {{- end }}
+          - name: crowdsec-agent-data
+            mountPath: /var/lib/crowdsec/data
 
       terminationGracePeriodSeconds: 30
       volumes:
@@ -352,6 +354,18 @@ spec:
           {{- else }}
           claimName: {{ .Release.Name }}-agent-config-pvc
           {{- end }}
+      {{- end }}
+      {{- if .Values.agent.persistentVolume.data.enabled }}
+      - name: crowdsec-agent-data
+        persistentVolumeClaim:
+          {{- if .Values.agent.persistentVolume.data.existingClaim }}
+          claimName: {{ .Values.agent.persistentVolume.data.existingClaim }}
+          {{- else }}
+          claimName: {{ .Release.Name }}-agent-data-pvc
+          {{- end }}
+      {{- else }}
+      - name: crowdsec-agent-data
+        emptyDir: {}
       {{- end }}
       {{ if (include "parsersIsNotEmpty" .) }}
       {{- range $stage, $stageConfig := .Values.config.parsers -}}
