@@ -284,7 +284,7 @@ if isfalse "$DISABLE_ONLINE_API" && [ "$ENROLL_KEY" != "" ]; then
         done
     fi
     # shellcheck disable=SC2086
-    cscli console enroll --overwrite $enroll_args "$ENROLL_KEY"
+    cscli console enroll $enroll_args "$ENROLL_KEY"
 fi
 
 # crowdsec sqlite database permissions
