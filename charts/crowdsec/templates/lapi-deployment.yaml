@@ -110,6 +110,13 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          {{- if and .Values.agent.lapiRegistration.machineName .Values.agent.lapiRegistration.password }}
+          - name: AGENT_MACHINE_{{ .Values.agent.lapiRegistration.machineName | upper | replace "-" "_" }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "lapi.secretName" . }}
+                key: agentMachinePassword
+          {{- end }}
         {{- with .Values.lapi.env }}
           {{- toYaml . | nindent 10 }}
         {{- end }}

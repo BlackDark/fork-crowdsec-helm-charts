@@ -725,6 +725,12 @@ agent:
     # the same identity after restarts/rescheduling.
     ## @param agent.lapiRegistration.machineName [string] Fixed machine name for agent LAPI registration
     machineName: ""
+    # -- Pre-shared password for the agent machine (stored in lapi secrets).
+    # When set, LAPI pre-registers the machine on startup and the agent
+    # uses these credentials directly — no registration call needed.
+    # This makes restarts instant and immune to "already registered" errors.
+    ## @param agent.lapiRegistration.password [string] Pre-shared password for agent machine (enables LAPI-side pre-registration)
+    password: ""
 
 # -- Enable AppSec (https://docs.crowdsec.net/docs/next/appsec/intro)
 appsec:

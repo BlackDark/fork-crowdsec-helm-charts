@@ -221,6 +221,16 @@ fi
 
 ################################
 
+# Pre-register remote agent machines (for fixed-name agents in k8s)
+# Env vars: AGENT_MACHINE_<name>=<password>
+env | grep -E '^AGENT_MACHINE_' | while IFS='=' read -r key value; do
+    machine_name="${key#AGENT_MACHINE_}"
+    # lowercase the name (env vars are uppercased)
+    machine_name=$(echo "$machine_name" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+    echo "Pre-registering agent machine: $machine_name"
+    cscli machines add "$machine_name" -p "$value" -f /dev/null --force
+done
+
 conf_set_if "$LOCAL_API_URL" '.url = strenv(LOCAL_API_URL)' "$lapi_credentials_path"
 
 conf_set_if "$INSECURE_SKIP_VERIFY" '.api.client.insecure_skip_verify = env(INSECURE_SKIP_VERIFY)'
