@@ -56,7 +56,39 @@ spec:
       - name: wait-for-lapi-and-register
         image: "{{ .Values.image.repository | default "crowdsecurity/crowdsec" }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ['sh', '-c', 'until nc "$LAPI_HOST" "$LAPI_PORT" -z; do echo waiting for lapi to start; sleep 5; done; ln -s /staging/etc/crowdsec /etc/crowdsec && cscli lapi register --machine "$USERNAME" -u "$LAPI_URL" --token "$REGISTRATION_TOKEN" && cp /etc/crowdsec/local_api_credentials.yaml /tmp_config/local_api_credentials.yaml']
+        command:
+          - sh
+          - "-c"
+          - |
+            until nc "$LAPI_HOST" "$LAPI_PORT" -z; do
+              echo "waiting for lapi to start"
+              sleep 5
+            done
+
+            ln -s /staging/etc/crowdsec /etc/crowdsec
+
+            # Try to re-use existing credentials (PVC or emptyDir)
+            CRED_FILE=""
+            if [ -f "$PVC_CRED_PATH" ]; then
+              CRED_FILE="$PVC_CRED_PATH"
+            elif [ -f /tmp_config/local_api_credentials.yaml ]; then
+              CRED_FILE="/tmp_config/local_api_credentials.yaml"
+            fi
+
+            if [ -n "$CRED_FILE" ]; then
+              cp "$CRED_FILE" /etc/crowdsec/local_api_credentials.yaml
+              if cscli lapi status >/dev/null 2>&1; then
+                echo "Existing credentials valid, skipping registration"
+                cp "$CRED_FILE" /tmp_config/local_api_credentials.yaml
+                exit 0
+              fi
+              echo "Existing credentials invalid, re-registering"
+            fi
+
+            # Register with LAPI
+            set -e
+            cscli lapi register --machine "$USERNAME" -u "$LAPI_URL" --token "$REGISTRATION_TOKEN"
+            cp /etc/crowdsec/local_api_credentials.yaml /tmp_config/local_api_credentials.yaml
       {{- else }}
       - name: wait-for-lapi
         image: "{{ .Values.agent.wait_for_lapi.image.repository }}:{{ .Values.agent.wait_for_lapi.image.tag }}"
@@ -75,18 +107,35 @@ spec:
         volumeMounts:
           - name: crowdsec-config
             mountPath: /tmp_config
+          {{- if .Values.agent.persistentVolume.config.enabled }}
+          - name: crowdsec-agent-config
+            mountPath: /etc/crowdsec_data
+            {{- if .Values.agent.persistentVolume.config.subPath }}
+            subPath: {{ .Values.agent.persistentVolume.config.subPath }}
+            {{- end }}
+          {{- end }}
         {{- end }}
         env:
           {{- if or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth) }}
+          - name: PVC_CRED_PATH
+            {{- if .Values.agent.persistentVolume.config.enabled }}
+            value: "/etc/crowdsec_data/local_api_credentials.yaml"
+            {{- else }}
+            value: ""
+            {{- end }}
           - name: REGISTRATION_TOKEN
             valueFrom:
               secretKeyRef:
                 name: {{ include "lapi.secretName" . }}
                 key: {{ include "lapi.registrationTokenKey" . }}
           - name: USERNAME
+            {{- if .Values.agent.lapiRegistration.machineName }}
+            value: {{ .Values.agent.lapiRegistration.machineName | quote }}
+            {{- else }}
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+            {{- end }}
           - name: LAPI_URL
             value: "{{ .Values.agent.lapiURL | default (printf "http://%s-service.%s:8080" .Release.Name .Release.Namespace) }}"
           {{- end }}

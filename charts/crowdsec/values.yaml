@@ -714,6 +714,18 @@ agent:
       allowPrivilegeEscalation: false
       privileged: false
 
+  # -- LAPI registration settings for the agent
+  lapiRegistration:
+    # -- Enable LAPI registration init container (auto-register on startup)
+    ## @param agent.lapiRegistration.enabled [default: true] Enable LAPI auto-registration init container
+    enabled: true
+    # -- Fixed machine name for the agent (persists across pod restarts).
+    # If empty, defaults to metadata.name (pod name). Set this to a stable
+    # name when using Deployments with PVC persistence so the agent re-uses
+    # the same identity after restarts/rescheduling.
+    ## @param agent.lapiRegistration.machineName [string] Fixed machine name for agent LAPI registration
+    machineName: ""
+
 # -- Enable AppSec (https://docs.crowdsec.net/docs/next/appsec/intro)
 appsec:
   # -- Enable AppSec (by default disabled)
