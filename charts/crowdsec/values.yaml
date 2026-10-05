@@ -557,25 +557,32 @@ agent:
     requests:
       cpu: 500m
       memory: 250Mi
-  # -- Idempotent LAPI registration when using token auth (see files/agent-lapi-register.sh)
+  ## @param agent.lapiRegistration.enabled Idempotent LAPI registration when using token auth (see files/agent-lapi-register.sh)
   lapiRegistration:
     enabled: false
-    # -- LAPI machine name (empty = pod name). Use a stable name with config PVC across rollouts.
+    ## @param agent.lapiRegistration.machineName LAPI machine name (empty = pod name). Use a stable name with config PVC across rollouts.
     machineName: ""
+    ## @param agent.lapiRegistration.pvcMountPath Mount path of the agent config PVC; must also be used in agent.extraVolumeMounts instead of /etc/crowdsec
     pvcMountPath: /etc/crowdsec_data
+    ## @param agent.lapiRegistration.reusePersistedCredentials Reuse local_api_credentials.yaml from the config PVC when its login matches the pod name
     reusePersistedCredentials: true
+    ## @param agent.lapiRegistration.validateCredentials Run `cscli lapi status` before reusing PVC credentials
     validateCredentials: true
+    ## @param agent.lapiRegistration.retryOnAlreadyExist Retry registration when the machine already exists (e.g. waiting for LAPI autodelete)
     retryOnAlreadyExist: true
+    ## @param agent.lapiRegistration.retryOnAlreadyExistMaxAttempts Max registration attempts
     retryOnAlreadyExistMaxAttempts: 90
+    ## @param agent.lapiRegistration.retryOnAlreadyExistIntervalSeconds Seconds between registration attempts
     retryOnAlreadyExistIntervalSeconds: 10
-    # -- preStop hook: cscli lapi unregister on graceful termination (use with unregister_on_exit in agent config)
+    ## @param agent.lapiRegistration.preStopUnregister preStop hook: cscli lapi unregister on graceful termination (use with unregister_on_exit in agent config). Cannot be combined with agent.lifecycle.preStop.
     preStopUnregister:
+      ## @param agent.lapiRegistration.preStopUnregister.enabled [default: false] Enable the preStop unregister hook
       enabled: false
-  # -- Run cscli hub upgrade before crowdsec (scenario data files in /var/lib/crowdsec/data)
+  ## @param agent.startup Startup behaviour of the agent container
   startup:
-    hubUpgrade: true
-  # -- Lifecycle hooks for agent pods (merged with preStopUnregister when enabled)
-  ## @param agent.lifecycle [object] Lifecycle hooks for agent pods (postStart, preStop, etc.)
+    ## @param agent.startup.hubUpgrade [default: false] Run `cscli hub upgrade` and install COLLECTIONS before crowdsec (scenario data files in /var/lib/crowdsec/data). Only persists across restarts when agent.persistentVolume.config.enabled is true.
+    hubUpgrade: false
+  ## @param agent.lifecycle [object] Lifecycle hooks for agent pods (postStart, preStop, etc.). agent.lifecycle.preStop cannot be combined with agent.lapiRegistration.preStopUnregister.enabled.
   lifecycle: {}
   # -- Enable persistent volumes
   persistentVolume:

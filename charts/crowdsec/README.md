@@ -1,6 +1,6 @@
 # crowdsec
 
-![Version: 0.24.2](https://img.shields.io/badge/Version-0.24.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.8.1](https://img.shields.io/badge/AppVersion-v1.8.1-informational?style=flat-square)
+![Version: 0.25.0](https://img.shields.io/badge/Version-0.25.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.8.1](https://img.shields.io/badge/AppVersion-v1.8.1-informational?style=flat-square)
 
 Crowdsec helm chart is an open-source, lightweight agent to detect and respond to bad behaviours.
 
@@ -655,23 +655,25 @@ controller:
 | `agent.podSecurityContext`                       | Security context for agent pods                                                            | `{}`    |
 | `agent.securityContext`                          | Security context for agent containers                                                      | `{}`    |
 | `agent.resources`                                | Resource requests and limits for agent pods                                                | `{}`    |
-| `agent.lapiRegistration.enabled`                 | Idempotent LAPI registration: reuse PVC credentials, validate via `cscli lapi status`, retry on duplicate machine | `false` |
-| `agent.lapiRegistration.machineName`             | Stable LAPI machine name (empty = pod name). Use with config PVC across rollouts | `""`    |
-| `agent.lapiRegistration.pvcMountPath`            | Mount path for agent config PVC (init + main); must match `extraVolumeMounts` under this path, not `/etc/crowdsec` | `/etc/crowdsec_data` |
-| `agent.lapiRegistration.reusePersistedCredentials` | Reuse `local_api_credentials.yaml` from PVC when login matches pod name                 | `true`  |
-| `agent.lapiRegistration.validateCredentials`     | Run `cscli lapi status` before reusing PVC credentials                                     | `true`  |
-| `agent.lapiRegistration.retryOnAlreadyExist`     | Retry registration when machine already exists (e.g. waiting for LAPI autodelete)          | `true`  |
-| `agent.lapiRegistration.retryOnAlreadyExistMaxAttempts` | Max registration retries                                                          | `90`    |
-| `agent.lapiRegistration.retryOnAlreadyExistIntervalSeconds` | Seconds between retries                                                     | `10`    |
-| `agent.lapiRegistration.preStopUnregister.enabled` | preStop `cscli lapi unregister` when `lapiRegistration.enabled` (pair with `unregister_on_exit`) | `true` |
-| `agent.startup.hubUpgrade`                       | Run `cscli hub upgrade` before start (scenario data files; uses `agent-start.sh`) | `true` |
-| `agent.lifecycle`                                | Extra lifecycle hooks for agent pods (merged with preStop unregister)       | `{}`    |
+| `agent.lapiRegistration.enabled`                 | Idempotent LAPI registration when using token auth (see files/agent-lapi-register.sh) | `false` |
+| `agent.lapiRegistration.machineName`             | LAPI machine name (empty = pod name). Use a stable name with config PVC across rollouts. | `""` |
+| `agent.lapiRegistration.pvcMountPath`            | Mount path of the agent config PVC; must also be used in agent.extraVolumeMounts instead of `/etc/crowdsec` | `/etc/crowdsec_data` |
+| `agent.lapiRegistration.reusePersistedCredentials` | Reuse `local_api_credentials.yaml` from the config PVC when its login matches the pod name | `true` |
+| `agent.lapiRegistration.validateCredentials`     | Run `cscli lapi status` before reusing PVC credentials | `true` |
+| `agent.lapiRegistration.retryOnAlreadyExist`     | Retry registration when the machine already exists (e.g. waiting for LAPI autodelete) | `true` |
+| `agent.lapiRegistration.retryOnAlreadyExistMaxAttempts` | Max registration attempts | `90` |
+| `agent.lapiRegistration.retryOnAlreadyExistIntervalSeconds` | Seconds between registration attempts | `10` |
+| `agent.lapiRegistration.preStopUnregister`     | preStop hook: `cscli lapi unregister` on graceful termination (use with `unregister_on_exit` in agent config). Cannot be combined with `agent.lifecycle.preStop`. | `{ "enabled": false }` |
+| `agent.lapiRegistration.preStopUnregister.enabled` | Enable the preStop unregister hook | `false` |
+| `agent.startup`                                  | Startup behaviour of the agent container | `{ "hubUpgrade": false }` |
+| `agent.startup.hubUpgrade`                       | Run `cscli hub upgrade` and install `COLLECTIONS` before crowdsec (scenario data files in `/var/lib/crowdsec/data`). Only persists across restarts when `agent.persistentVolume.config.enabled` is true. | `false` |
+| `agent.lifecycle`                                | Lifecycle hooks for agent pods (postStart, preStop, etc.). `agent.lifecycle.preStop` cannot be combined with `agent.lapiRegistration.preStopUnregister.enabled`. | `{}` |
 | `agent.persistentVolume.config.enabled`          | [object] Enable persistent volume for agent config                                         | `false` |
-| `agent.persistentVolume.config.accessModes`      | Access modes for the config PVC                                                            | `[]`    |
+| `agent.persistentVolume.config.accessModes`      | Access modes for the config PVC                                                            | `[ "ReadWriteOnce" ]` |
 | `agent.persistentVolume.config.storageClassName` | StorageClass name for the config PVC                                                       | `""`    |
 | `agent.persistentVolume.config.existingClaim`    | Existing PVC name to use for config                                                        | `""`    |
 | `agent.persistentVolume.config.subPath`          | subPath to use within the volume                                                           | `""`    |
-| `agent.persistentVolume.config.size`             | Requested size for the config PVC                                                          | `""`    |
+| `agent.persistentVolume.config.size`             | Requested size for the config PVC                                                          | `100Mi` |
 | `agent.hostVarLog`                               | [object] Mount hostPath `/var/log` into the agent pod                                      | `true`  |
 | `agent.env`                                      | Environment variables passed to the crowdsecurity/crowdsec container                       | `[]`    |
 | `agent.nodeSelector`                             | Node selector for agent pods                                                               | `{}`    |
