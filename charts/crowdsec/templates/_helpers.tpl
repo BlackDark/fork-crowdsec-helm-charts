@@ -194,17 +194,19 @@ false
 {{- end -}}
 
 {{- define "agent.lapiPreStopUnregisterEnabled" -}}
-{{- if eq (include "agent.lapiRegistrationEnabled" .) "true" -}}
-{{- if not (eq .Values.agent.lapiRegistration.preStopUnregister.enabled false) -}}true{{- end -}}
-{{- end -}}
+{{- if and (eq (include "agent.lapiRegistrationEnabled" .) "true") (eq .Values.agent.lapiRegistration.preStopUnregister.enabled true) -}}true{{- end -}}
 {{- end -}}
 
+{{/*
+  PVC bootstrap is orthogonal to token auth: TLS-client-auth agents have no registration
+  init container, but they still need the config PVC seeded and symlinked.
+*/}}
 {{- define "agent.pvcBootstrapEnabled" -}}
-{{- if and (eq (include "agent.tokenAuthRegistration" .) "true") .Values.agent.persistentVolume.config.enabled }}true{{- end -}}
+{{- if and .Values.agent.enabled .Values.agent.persistentVolume.config.enabled }}true{{- end -}}
 {{- end -}}
 
 {{- define "agent.hubUpgradeOnStart" -}}
-{{- if and .Values.agent.enabled (not (eq .Values.agent.startup.hubUpgrade false)) }}true{{- end -}}
+{{- if and .Values.agent.enabled (eq .Values.agent.startup.hubUpgrade true) }}true{{- end -}}
 {{- end -}}
 
 {{- define "agent.agentScripts" -}}
@@ -217,6 +219,17 @@ false
 
 {{- define "agent.pvcMountPath" -}}
 {{- .Values.agent.lapiRegistration.pvcMountPath | default "/etc/crowdsec_data" -}}
+{{- end -}}
+
+{{/*
+  Directory the agent reads its config from at runtime: the PVC when enabled, /etc/crowdsec otherwise.
+*/}}
+{{- define "agent.activeConfigDir" -}}
+{{- if .Values.agent.persistentVolume.config.enabled -}}
+{{- include "agent.pvcMountPath" . -}}
+{{- else -}}
+/etc/crowdsec
+{{- end -}}
 {{- end -}}
 
 {{- define "agent.startupEnv" -}}
