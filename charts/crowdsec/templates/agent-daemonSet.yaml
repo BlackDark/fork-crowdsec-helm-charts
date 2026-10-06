@@ -128,13 +128,13 @@ spec:
         command: ['sh', '/scripts/agent-start.sh']
     {{- else if or (not .Values.tls.enabled) (not .Values.tls.agent.tlsClientAuth) }}
       {{- if .Values.agent.persistentVolume.config.enabled }}
-        command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && ./docker_start.sh']
+        command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && mv -n /staging/etc/crowdsec/* {{ include "agent.pvcMountPath" . }}/ && rm -rf /staging/etc/crowdsec && ln -s {{ include "agent.pvcMountPath" . }} /etc/crowdsec && ./docker_start.sh']
       {{- else }}
         command: ['sh', '-c', 'cp /tmp_config/local_api_credentials.yaml /staging/etc/crowdsec/local_api_credentials.yaml && ./docker_start.sh']
       {{- end }}
     {{- else }}
       {{- if .Values.agent.persistentVolume.config.enabled }}
-        command: ['sh', '-c', 'mv -n /staging/etc/crowdsec/* /etc/crowdsec_data/ && rm -rf /staging/etc/crowdsec && ln -s /etc/crowdsec_data /etc/crowdsec && ./docker_start.sh']
+        command: ['sh', '-c', 'mv -n /staging/etc/crowdsec/* {{ include "agent.pvcMountPath" . }}/ && rm -rf /staging/etc/crowdsec && ln -s {{ include "agent.pvcMountPath" . }} /etc/crowdsec && ./docker_start.sh']
       {{- end }}
     {{- end }}
         env:
@@ -204,6 +204,9 @@ spec:
 
         securityContext:
           {{- toYaml .Values.agent.securityContext | nindent 10 }}
+        {{- if and (eq (include "agent.lapiPreStopUnregisterEnabled" .) "true") (kindIs "map" .Values.agent.lifecycle) (index .Values.agent.lifecycle "preStop") }}
+        {{- fail "agent.lifecycle.preStop and agent.lapiRegistration.preStopUnregister.enabled cannot both be set: the chart injects its own preStop hook. Disable preStopUnregister, or put the unregister command in agent.lifecycle.preStop yourself." }}
+        {{- end }}
         {{- if or (eq (include "agent.lapiPreStopUnregisterEnabled" .) "true") (not (empty .Values.agent.lifecycle)) }}
         lifecycle:
           {{- with .Values.agent.lifecycle }}
@@ -215,7 +218,7 @@ spec:
               command:
                 - sh
                 - -c
-                - cscli -c /etc/crowdsec/config.yaml lapi unregister || true
+                - cscli -c {{ include "agent.activeConfigDir" . }}/config.yaml lapi unregister || true
           {{- end }}
         {{- end }}
 
@@ -246,7 +249,7 @@ spec:
           {{- range $stage, $stageConfig := .Values.config.parsers -}}
           {{- if $stageConfig -}}
           {{ range $fileName, $content := $stageConfig -}}
-          - name: {{ printf "crowdsec-parsers-%s-%s" $stage (trimSuffix ".yaml" $fileName) }}
+          - name: {{ include "crowdsec.volumeName" (printf "crowdsec-parsers-%s-%s" $stage $fileName) }}
             mountPath: {{ printf "%s/parsers/%s/%s" $crowdsecConfig $stage $fileName }}
             subPath: {{ $fileName }}
           {{ end }}
@@ -255,7 +258,7 @@ spec:
           {{- end }}
           {{- if .Values.config.scenarios -}}
           {{ range $fileName, $content := .Values.config.scenarios -}}
-          - name: {{ printf "crowdsec-scenarios-%s" (trimSuffix ".yaml" $fileName) }}
+          - name: {{ include "crowdsec.volumeName" (printf "crowdsec-scenarios-%s" $fileName) }}
             mountPath: {{ printf "%s/scenarios/%s" $crowdsecConfig $fileName }}
             subPath: {{ $fileName }}
           {{ end }}
@@ -264,7 +267,7 @@ spec:
           {{- range $stage, $stageConfig := .Values.config.postoverflows -}}
           {{- if $stageConfig -}}
           {{ range $fileName, $content := $stageConfig -}}
-          - name: {{ printf "crowdsec-postoverflows-%s-%s" $stage (trimSuffix ".yaml" $fileName) }}
+          - name: {{ include "crowdsec.volumeName" (printf "crowdsec-postoverflows-%s-%s" $stage $fileName) }}
             mountPath: {{ printf "%s/postoverflows/%s/%s" $crowdsecConfig $stage $fileName }}
             subPath: {{ $fileName }}
           {{ end }}
@@ -330,7 +333,7 @@ spec:
       {{- range $stage, $stageConfig := .Values.config.parsers -}}
       {{- if $stageConfig -}}
       {{ range $fileName, $content := $stageConfig -}}
-      - name: {{ printf "crowdsec-parsers-%s-%s" $stage (trimSuffix ".yaml" $fileName) }}
+      - name: {{ include "crowdsec.volumeName" (printf "crowdsec-parsers-%s-%s" $stage $fileName) }}
         configMap:
           name: {{ printf "crowdsec-parsers-%s" $stage }}
           items:
@@ -342,7 +345,7 @@ spec:
       {{- end }}
       {{- if .Values.config.scenarios -}}
       {{ range $fileName, $content := .Values.config.scenarios -}}
-      - name: {{ printf "crowdsec-scenarios-%s" (trimSuffix ".yaml" $fileName) }}
+      - name: {{ include "crowdsec.volumeName" (printf "crowdsec-scenarios-%s" $fileName) }}
         configMap:
           name: "crowdsec-scenarios"
           items:
@@ -354,7 +357,7 @@ spec:
       {{- range $stage, $stageConfig := .Values.config.postoverflows -}}
       {{- if $stageConfig -}}
       {{ range $fileName, $content := $stageConfig -}}
-      - name: {{ printf "crowdsec-postoverflows-%s-%s" $stage (trimSuffix ".yaml" $fileName) }}
+      - name: {{ include "crowdsec.volumeName" (printf "crowdsec-postoverflows-%s-%s" $stage $fileName) }}
         configMap:
           name: {{ printf "crowdsec-postoverflows-%s" $stage }}
           items:

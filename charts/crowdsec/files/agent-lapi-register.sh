@@ -44,15 +44,33 @@ trap _cleanup_on_interrupt EXIT
 
 validate_stored_credentials() {
   valdir=/tmp/lapi-validate
+  cfg=$valdir/etc/crowdsec
+  command -v yq >/dev/null 2>&1 || { echo "FATAL: yq not found, cannot validate stored credentials" >&2; exit 1; }
   rm -rf "$valdir"
-  mkdir -p "$valdir/etc/crowdsec"
-  cp "$PVC_PATH/local_api_credentials.yaml" "$valdir/etc/crowdsec/local_api_credentials.yaml"
+  mkdir -p "$cfg/hub" "$cfg/notifications"
   if [ -f "$PVC_PATH/config.yaml" ]; then
-    cp "$PVC_PATH/config.yaml" "$valdir/etc/crowdsec/config.yaml"
+    src=$PVC_PATH
   else
-    cp /staging/etc/crowdsec/config.yaml "$valdir/etc/crowdsec/config.yaml"
+    src=/staging/etc/crowdsec
   fi
-  cscli -c "$valdir/etc/crowdsec/config.yaml" lapi status >/tmp/lapi-check.err 2>&1
+  # Stage config.yaml, the credentials under test and the hub index only; the rest of
+  # the config tree (hub data files) is large and irrelevant for `lapi status`.
+  cp "$src/config.yaml" "$cfg/config.yaml" || { echo "FATAL: cannot stage $src/config.yaml" >&2; exit 1; }
+  cp "$PVC_PATH/local_api_credentials.yaml" "$cfg/local_api_credentials.yaml" || { echo "FATAL: cannot stage stored credentials" >&2; exit 1; }
+  if [ -f "$src/hub/.index.json" ]; then
+    cp "$src/hub/.index.json" "$cfg/hub/.index.json"
+  fi
+  yq e '.config_paths and .api.client' "$cfg/config.yaml" | grep -q true \
+    || { echo "FATAL: unexpected config.yaml layout in $src" >&2; exit 1; }
+  # Every path in config.yaml is absolute, so without this cscli would read the image's
+  # own credentials and hub index instead of the copy staged here from the PVC.
+  yq e ".config_paths.config_dir = \"$cfg/\" \
+    | .config_paths.hub_dir = \"$cfg/hub/\" \
+    | .config_paths.index_path = \"$cfg/hub/.index.json\" \
+    | .config_paths.notification_dir = \"$cfg/notifications/\" \
+    | .api.client.credentials_path = \"$cfg/local_api_credentials.yaml\"" \
+    -i "$cfg/config.yaml" || { echo "FATAL: cannot rewrite $cfg/config.yaml" >&2; exit 1; }
+  cscli -c "$cfg/config.yaml" lapi status >/tmp/lapi-check.err 2>&1
 }
 
 if [ "$PVC_ENABLED" = "true" ] && [ "$REUSE" = "true" ] && [ -s "$PVC_PATH/local_api_credentials.yaml" ]; then
